@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <meta http-equiv="refresh" content="10">
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
+    >
+    <title>صاحب</title>
+  </head>
+  <body>
+    <main class="container">
+      <h1>صاحب اللغة</h1>
+
+
+          <div class="grid">
+              <input type="text" name="Search word" value="" id="searchInput" placeholder="Search for a word: فعل"/>
+              <button id="searchBtn">Search</button>
+          </div>
+
+      <div class="grid">
+          <div>
+              Hello
+          </div>
+      </div>
+
+      <footer>
+          <div class="grid">
+              <input type="text" name="Perplexity API Key" value="" id="perplexityApiKey" placeholder="Perplexity API Key"/>
+              <button id="registerApiKey">Register API Key</button>
+          </div>
+      </footer>
+
+
+    </main>
+  </body>
+
+  <script>
+        const ELIXIR_URL = "https://quest.ms.mff.cuni.cz/cgi-bin/elixir/index.fcgi?mode=home";
+        const PERPLEXITY_KEY =   "perplexityApiKey";
+      const q = document.getElementById;
+
+      const elPerplexityKey = q(PERPLEXITY_KEY);
+      const elRegisterKey = q("registerApiKey");
+      const elSearchInput = q("searchInput");
+      const elSearchBtn = q("searchBtn");
+
+      elSearchBtn.addEventListener("click", () => {
+        console.log(elSearchInput.value);
+        elSearchInput.value = "";
+      });
+
+      elRegisterKey.addEventListener("click", () => {
+          const newKey = elPerplexityKey.value; 
+          localStorage.setItem(PERPLEXITY_KEY, newKey);
+          elPerplexityKey.value = "Set !";
+      });
+
+
+
+  </script>
+</html>
