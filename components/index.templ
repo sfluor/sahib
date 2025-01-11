@@ -1,5 +1,7 @@
 package components
 
+import "sahib/model"
+
 templ Index() {
 <!DOCTYPE html>
 <html lang="en">
@@ -9,31 +11,97 @@ templ Index() {
     <main class="container">
       <h1>صاحب اللغة</h1>
 
-      @InputGroup("search", "", "Search for a word: فعل", "Search !", templ.Attributes{
-        "hx-target": "#result", "hx-post": "/search", "hx-target-error": "#result", "hx-swap": "innerHTML",
-       })
+      <form
+        class="grid"
+        hx-target="#result"
+        hx-disabled-elt="find input[type='text'], find button"
+        hx-post="/search"
+        hx-target-error="#result"
+        hx-swap="innerHTML"
+        hx-indicator="#indicator"
+      >
+          <input type="text" name="search" id="search" placeholder="Search for a word: فعل"/>
+          <button type="submit">Search !</button>
+      </form>
 
-      <div class="grid">
-          <div id="result"> Start searching ! </div>
-      </div>
+        <span aria-busy="true" id="indicator" class="htmx-indicator">Looking up for the word...</span>
 
-    <footer>
-      @InputGroup("registerKey", "", "Your Perplexity API Key", "Register API Key", templ.Attributes{})
-      </footer>
+        <div class="grid">
+            <div id="result"> Start searching ! </div>
+        </div>
+
+        <footer>
+            <div class="grid">
+                <input type="text" id="registerKey" placeholder="Your Perplexity API Key"/>
+                <button id="registerKeyButton">Register your API Key</button>
+            </div>
+        </footer>
     </main>
 </body>
+<script>
+    let PERPLEXITY_API_KEY = "perplexityApiKey";
+    function loadAPIKey() {
+        return localStorage.getItem(PERPLEXITY_API_KEY);
+    }
 
+    function registerAPIKey(key) {
+        localStorage.setItem(PERPLEXITY_API_KEY, key);
+    }
+
+    document.getElementById("registerKeyButton")
+        .addEventListener("click", () => {
+            const input = document.getElementById("registerKey");
+            registerAPIKey(input.value);
+            input.value = "API Key registered !";
+        });
+</script>
 </html>
 }
 
-templ Result(res string) {
-    <pre> Result: { res } </pre>
-}
-
-
-templ InputGroup(id string, val string, placeholder string, action string, attrs templ.Attributes) {
-  <form class="grid" {attrs...}>
-      <input type="text" name={ id } value={ val } id={ id } placeholder={ placeholder }/>
-      <button type="submit">{ action }</button>
-  </form>
+templ Result(pplx model.PerplexityResp, elxr []model.ElixirResp, elixirURL string) {
+    <div>
+        <span>Traduction: { pplx.Translation }</span>
+        <br />
+        <article>
+        <header> From <a href={ templ.URL(elixirURL) }>Elixir </a></header>
+            <table>
+                <thead>
+                    <tr>
+                        <th scope="col">Type</th>
+                        <th scope="col">Arabic</th>
+                        <th scope="col">Translation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    for _, row := range elxr {
+                        <tr>
+                            <th>{ row.Tag }</th>
+                            <th>{ row.Arabic }</th>
+                            <th>{ row.Translation }</th>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </article>
+        <br />
+        <article>
+            <header><b>From perplexity</b></header>
+            <table>
+                <thead>
+                    <tr>
+                        <th scope="col">Arabic</th>
+                        <th scope="col">Translation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    for _, example := range pplx.Examples {
+                        <tr>
+                            <th>{ example.Sentence }</th>
+                            <th>{ example.Translation }</th>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </article>
+    </div>
 }

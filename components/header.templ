@@ -10,6 +10,16 @@ templ Header() {
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
     >
+    <script>
+        const PERPLEXITY_API_KEY = "perplexityApiKey";
+        function loadAPIKey() {
+            return localStorage.getItem(PERPLEXITY_API_KEY);
+        }
+
+        function registerAPIKey(key) {
+            localStorage.setItem(PERPLEXITY_API_KEY, key);
+        }
+    </script>
     <title>صاحب</title>
 </head>
 }
