@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"mime/multipart"
 	"net/http"
@@ -27,8 +28,8 @@ func main() {
 	http.HandleFunc("POST /search", func(w http.ResponseWriter, r *http.Request) {
 		search := r.FormValue("search")
 		log.Printf("Searching for: %s", search)
-		tok := "apikey"
-		res, err := queryPerplexity(tok, search)
+		apiKey := r.FormValue("apiKey")
+		res, err := queryPerplexity(apiKey, search)
 
 		if err != nil {
 			errStr := fmt.Sprintf("An error occurred querying perplexity: %w", err)
@@ -54,7 +55,6 @@ func main() {
 }
 
 func queryElixir(word string) ([]model.ElixirResp, error) {
-
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
@@ -159,100 +159,68 @@ type PerplexityAPIMessage struct {
 
 func queryPerplexity(token string, word string) (model.PerplexityResp, error) {
 	resp := model.PerplexityResp{}
-	//    url := "https://api.perplexity.ai/chat/completions"
-	//
-	// // Create the request body using map[string]interface{}
-	// requestBody := map[string]interface{}{
-	// 	"model": "llama-3.1-sonar-small-128k-online",
-	// 	"messages": []map[string]string{
-	// 		{
-	// 			"role":    "system",
-	// 			"content": "Don't repeat yourself, be precise and concise.",
-	// 		},
-	// 		{
-	// 			"role":    "user",
-	// 			"content": prompt(word),
-	// 		},
-	// 	},
-	// 	"max_tokens":               "1000",
-	// 	"temperature":              0.2,
-	// 	"top_p":                    0.9,
-	// 	"search_domain_filter":     []string{"perplexity.ai"},
-	// 	"return_images":            false,
-	// 	"return_related_questions": false,
-	// 	"search_recency_filter":    "month",
-	// 	"top_k":                    0,
-	// 	"stream":                   false,
-	// 	"presence_penalty":         0,
-	// 	"frequency_penalty":        1,
-	// }
-	//
-	//
-	// // Serialize the request body to JSON
-	// jsonBody, err := json.Marshal(requestBody)
-	// if err != nil {
-	//        return resp, fmt.Errorf("Error serializing request body: %w\n", err)
-	// }
-	//
-	// // Create a new HTTP request
-	// req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonBody))
-	// if err != nil {
-	//        return resp, fmt.Errorf("Error creating request: %w\n", err)
-	// }
-	//
-	// // Set headers
-	// req.Header.Set("Authorization", "Bearer "+token)
-	// req.Header.Set("Content-Type", "application/json")
-	//
-	// // Send the request
-	// client := &http.Client{}
-	// rawResp, err := client.Do(req)
-	// if err != nil {
-	//        return resp, fmt.Errorf("Error sending request: %w\n", err)
-	// }
-	// defer rawResp.Body.Close()
-	//
-	// // Read the response body
-	// body, err := io.ReadAll(rawResp.Body)
-	// if err != nil {
-	//        return resp, fmt.Errorf("Error reading body: %w\n", err)
-	// }
-	//
-	// // Check the response status code
-	// if rawResp.StatusCode != http.StatusOK {
-	//        return resp, fmt.Errorf("Unexpected status code: %d: %s", rawResp.StatusCode, string(body))
-	// }
+	url := "https://api.perplexity.ai/chat/completions"
 
-	body := []byte(strings.Replace(`
-{
-  "id": "c871af1e-7f86-46f4-915d-5ee54f1b19af",
-  "model": "llama-3.1-sonar-huge-128k-online",
-  "created": 1736598912,
-  "usage": {
-    "prompt_tokens": 90,
-    "completion_tokens": 338,
-    "total_tokens": 428
-  },
-  "citations": [
-    "https://www.tiktok.com/discover/%D9%81%D8%B1%D8%B6-%D8%AA%D8%A3%D9%84%D9%8A%D9%81%D9%8A-%D8%B9%D8%AF%D8%AF3-%D9%81%D8%B1%D9%86%D8%B3%D9%8A%D8%A9-%D8%B3%D9%86%D8%A9-%D8%B3%D8%A7%D8%A8%D8%B9%D8%A9-%D8%A3%D8%B3%D8%A7%D8%B3%D9%8A"
-  ],
-  "object": "chat.completion",
-  "choices": [
-    {
-      "index": 0,
-      "finish_reason": "stop",
-      "message": {
-        "role": "assistant",
-        "content": "Here are 5 examples of useful and relevant sentences with the proper harakats for the word \"تفاوض\" along with their translations in French:\n\n$$$json\n{\n  \"translation\": \"négocier\",\n  \"examples\": [\n    {\n      \"sentence\": \"كان علي أن يتفاوض معهم لتحقيق اتفاق.\",\n      \"translation\": \"Il devait négocier avec eux pour parvenir à un accord.\"\n    },\n    {\n      \"sentence\": \"لا بد من التفاوض مع الأطراف المعنية.\",\n      \"translation\": \"Il faut négocier avec les parties concernées.\"\n    },\n    {\n      \"sentence\": \"كانت الخطة أن يتفاوض معهم لتحقيق حل.\",\n      \"translation\": \"Le plan était de négocier avec eux pour trouver une solution.\"\n    },\n    {\n      \"sentence\": \"يجب أن نتفاوض معهم لتحقيق مصلحتنا.\",\n      \"translation\": \"Nous devons négocier avec eux pour servir nos intérêts.\"\n    },\n    {\n      \"sentence\": \"كان من الضروري التفاوض معهم لتحقيق النجاح.\",\n      \"translation\": \"Il était essentiel de négocier avec eux pour réussir.\"\n    }\n  ]\n}\n$$$\n\nThese examples are crafted to provide a variety of contexts in which the word \"تفاوض\" (to negotiate) is used, along with their translations in French. Note that the source provided in the search results does not directly offer these examples, so they have been created to meet the request."
-      },
-      "delta": {
-        "role": "assistant",
-        "content": ""
-      }
-    }
-  ]
-}
-    `, "$", "`", -1))
+	// Create the request body using map[string]interface{}
+	requestBody := map[string]interface{}{
+		"model": "llama-3.1-sonar-small-128k-online",
+		"messages": []map[string]string{
+			{
+				"role":    "system",
+				"content": "Don't repeat yourself, be precise and concise.",
+			},
+			{
+				"role":    "user",
+				"content": prompt(word),
+			},
+		},
+		"max_tokens":               "1000",
+		"temperature":              0.2,
+		"top_p":                    0.9,
+		"search_domain_filter":     []string{"perplexity.ai"},
+		"return_images":            false,
+		"return_related_questions": false,
+		"search_recency_filter":    "month",
+		"top_k":                    0,
+		"stream":                   false,
+		"presence_penalty":         0,
+		"frequency_penalty":        1,
+	}
+
+	// Serialize the request body to JSON
+	jsonBody, err := json.Marshal(requestBody)
+	if err != nil {
+		return resp, fmt.Errorf("Error serializing request body: %w\n", err)
+	}
+
+	// Create a new HTTP request
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return resp, fmt.Errorf("Error creating request: %w\n", err)
+	}
+
+	// Set headers
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+
+	// Send the request
+	client := &http.Client{}
+	rawResp, err := client.Do(req)
+	if err != nil {
+		return resp, fmt.Errorf("Error sending request: %w\n", err)
+	}
+	defer rawResp.Body.Close()
+
+	// Read the response body
+	body, err := io.ReadAll(rawResp.Body)
+	if err != nil {
+		return resp, fmt.Errorf("Error reading body: %w\n", err)
+	}
+
+	// Check the response status code
+	if rawResp.StatusCode != http.StatusOK {
+		return resp, fmt.Errorf("Unexpected status code: %d: %s", rawResp.StatusCode, string(body))
+	}
 
 	apiResp := PerplexityAPIResp{}
 	if err := json.Unmarshal(body, &apiResp); err != nil {
@@ -260,7 +228,10 @@ func queryPerplexity(token string, word string) (model.PerplexityResp, error) {
 	}
 
 	content := apiResp.Choices[0].Message.Content
-	content = strings.Split(strings.Split(content, "```json")[1], "``")[0]
+    log.Printf("content: %s", content)
+    if !strings.HasPrefix(content, "{\n") {
+        content = strings.Split(strings.Split(content, "```json")[1], "``")[0]
+    }
 
 	if err := json.Unmarshal([]byte(content), &resp); err != nil {
 		return resp, fmt.Errorf("Error deserializing api response content: %w\n", err)

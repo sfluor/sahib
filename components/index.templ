@@ -18,6 +18,7 @@ templ Index() {
         hx-post="/search"
         hx-target-error="#result"
         hx-swap="innerHTML"
+        hx-include="#apiKey"
         hx-indicator="#indicator"
       >
           <input type="text" name="search" id="search" placeholder="Search for a word: فعل"/>
@@ -36,24 +37,33 @@ templ Index() {
                 <button id="registerKeyButton">Register your API Key</button>
             </div>
         </footer>
+        <input id="apiKey" name="apiKey" style="display: none" />
     </main>
 </body>
 <script>
-    let PERPLEXITY_API_KEY = "perplexityApiKey";
-    function loadAPIKey() {
-        return localStorage.getItem(PERPLEXITY_API_KEY);
-    }
+    // Scoping function to avoid redeclaration of const problems with htmx executing the script multiple times.
+    (() => {
+        const PERPLEXITY_API_KEY = "perplexityApiKey";
+        function loadAPIKey() {
+            return localStorage.getItem(PERPLEXITY_API_KEY);
+        }
 
-    function registerAPIKey(key) {
-        localStorage.setItem(PERPLEXITY_API_KEY, key);
-    }
+        function registerAPIKey(key) {
+            localStorage.setItem(PERPLEXITY_API_KEY, key);
+        }
 
-    document.getElementById("registerKeyButton")
-        .addEventListener("click", () => {
-            const input = document.getElementById("registerKey");
-            registerAPIKey(input.value);
-            input.value = "API Key registered !";
-        });
+        // Hack to easily add it into the htmx payload
+        const apiKeyInp = document.getElementById("apiKey");
+        apiKeyInp.value = loadAPIKey();
+
+        document.getElementById("registerKeyButton")
+            .addEventListener("click", () => {
+                const input = document.getElementById("registerKey");
+                registerAPIKey(input.value);
+                apiKeyInp.value = input.value;
+                input.value = "API Key registered !";
+            });
+    })();
 </script>
 </html>
 }
