@@ -1,0 +1,39 @@
+package components
+
+templ Index() {
+<!DOCTYPE html>
+<html lang="en">
+@Header()
+
+<body>
+    <main class="container">
+      <h1>صاحب اللغة</h1>
+
+      @InputGroup("search", "", "Search for a word: فعل", "Search !", templ.Attributes{
+        "hx-target": "#result", "hx-post": "/search", "hx-target-error": "#result", "hx-swap": "innerHTML",
+       })
+
+      <div class="grid">
+          <div id="result"> Start searching ! </div>
+      </div>
+
+    <footer>
+      @InputGroup("registerKey", "", "Your Perplexity API Key", "Register API Key", templ.Attributes{})
+      </footer>
+    </main>
+</body>
+
+</html>
+}
+
+templ Result(res string) {
+    <pre> Result: { res } </pre>
+}
+
+
+templ InputGroup(id string, val string, placeholder string, action string, attrs templ.Attributes) {
+  <form class="grid" {attrs...}>
+      <input type="text" name={ id } value={ val } id={ id } placeholder={ placeholder }/>
+      <button type="submit">{ action }</button>
+  </form>
+}

@@ -1,0 +1,18 @@
+root = "."
+
+[build]
+pre_cmd = ["templ generate"]
+bin = "./bin/sahib"
+cmd = "go build -o ./bin/sahib ."
+include_ext = ["go", "templ"]
+# Exclude specific regular expressions.
+exclude_regex = ["_templ\\.go"]
+kill_delay = 0
+send_interrupt = true
+
+
+# Enable live-reloading on the browser.
+[proxy]
+  enabled = true
+  proxy_port = 8090
+  app_port = 8080

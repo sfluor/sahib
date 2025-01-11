@@ -1,0 +1,3 @@
+bin/
+*_templ.go
+tmp/
