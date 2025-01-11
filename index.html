@@ -40,17 +40,29 @@
 
   <script>
         const ELIXIR_URL = "https://quest.ms.mff.cuni.cz/cgi-bin/elixir/index.fcgi?mode=home";
-        const PERPLEXITY_KEY =   "perplexityApiKey";
-      const q = document.getElementById;
+        const PERPLEXITY_KEY =  "perplexityApiKey";
+      const q = document.getElementById.bind(document);
 
       const elPerplexityKey = q(PERPLEXITY_KEY);
       const elRegisterKey = q("registerApiKey");
       const elSearchInput = q("searchInput");
       const elSearchBtn = q("searchBtn");
 
-      elSearchBtn.addEventListener("click", () => {
+      elSearchBtn.addEventListener("click", async () => {
         console.log(elSearchInput.value);
-        elSearchInput.value = "";
+
+          const formData = new FormData();
+              formData.append("text", elSearchInput.value);
+              formData.append("code", "Unicode");
+              formData.append("submit", "Resolve");
+              formData.append("mode", "resolve");
+              formData.append(  ".cgifields", "code");
+              formData.append(  ".cgifields", "fuzzy");
+              formData.append(  ".cgifields", "quick");
+
+          const response = await fetch(ELIXIR_URL, {method: "POST", body: formData});
+          const resultat = await response.text();
+          console.log(resultat);
       });
 
       elRegisterKey.addEventListener("click", () => {
