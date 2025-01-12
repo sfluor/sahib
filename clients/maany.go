@@ -2,7 +2,9 @@ package clients
 
 import (
 	"fmt"
+	"log"
 	"sahib/model"
+	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -23,12 +25,25 @@ func QueryMaany(word string) (model.Translations, error) {
 		return results, fmt.Errorf("failed to parse html body: %w", err)
 	}
 
+    toTashkil := []string{}
 	doc.Find(".panel-lightyellow").Find(".row").Each(func(i int, s *goquery.Selection) {
 		translation := s.Find(".text-left").Text()
 		arabic := s.Find(".text-right").Text()
 
+        toTashkil = append(toTashkil, strings.TrimSpace(arabic))
+
 		results.List = append(results.List, model.Translation{Arabic: arabic, Translation: translation})
 	})
+
+    tashkil, err := tashkil(toTashkil)
+    if err != nil {
+        log.Printf("Couldn't add tashkil to result: %+v: %s", results, err)
+        return results, nil
+    }
+
+    for i:= range results.List {
+        results.List[i].Arabic = tashkil[i]
+    }
 
 	return results, nil
 }
