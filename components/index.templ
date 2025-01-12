@@ -68,7 +68,7 @@ templ Index() {
 </html>
 }
 
-templ Result(pplx model.PerplexityResp, elxr []model.ElixirResp, elixirURL string) {
+templ Result(pplx model.PerplexityResp, elxr []model.ElixirResp, maany []model.MaanyResp, elixirURL string) {
     <div>
         <span>Traduction: { pplx.Translation }</span>
         <br />
@@ -86,6 +86,26 @@ templ Result(pplx model.PerplexityResp, elxr []model.ElixirResp, elixirURL strin
                     for _, row := range elxr {
                         <tr>
                             <th>{ row.Tag }</th>
+                            <th>{ row.Arabic }</th>
+                            <th>{ row.Translation }</th>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </article>
+        <br />
+        <article>
+        <header> From Maany </header>
+            <table>
+                <thead>
+                    <tr>
+                        <th scope="col">Arabic</th>
+                        <th scope="col">Translation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    for _, row := range maany {
+                        <tr>
                             <th>{ row.Arabic }</th>
                             <th>{ row.Translation }</th>
                         </tr>
