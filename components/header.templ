@@ -19,7 +19,51 @@ templ Header() {
         function registerAPIKey(key) {
             localStorage.setItem(PERPLEXITY_API_KEY, key);
         }
+
+        const sahibArabic = "sahib-arabic";
+        const sahibTranslated = "sahib-translated";
+        const sahibMarked = "sahib-marked";
+
+        function copyToClip() {
+            const arabics = [];
+            const translateds = [];
+
+            const nodes = document.getElementsByClassName(sahibMarked);
+            for (let i = 0; i < nodes.length; i++) {
+                let node = nodes[i];
+
+                const arabic = node.getElementsByClassName(sahibArabic)[0].textContent;
+                const translated = node.getElementsByClassName(sahibTranslated)[0].textContent;
+
+                arabics.push(arabic);
+                translateds.push(translated);
+            }
+
+            const out = arabics.join("\n") + "\n---\n" + translateds.join("\n");
+            console.log(out);
+            navigator.clipboard.writeText(out);
+        }
+
+        // Mark the first row
+        function mark(event) {
+            let node = event.target;
+            while (node.tagName !== "TR"){
+                node = node.parentNode;
+            }
+
+            if (node.classList.contains(sahibMarked)) {
+                node.classList.remove(sahibMarked);
+            } else {
+                node.classList.add(sahibMarked);
+            }
+        }
     </script>
+    <style>
+    .sahib-marked > th {
+        color: rgb(57, 135, 18);
+    }
+
+    </style>
     <title>صاحب</title>
 </head>
 }

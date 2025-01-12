@@ -6,6 +6,8 @@ import (
 	"log"
 	"mime/multipart"
 	"sahib/model"
+	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -13,6 +15,15 @@ import (
 const ElixirURL = "https://quest.ms.mff.cuni.cz/cgi-bin/elixir/index.fcgi?mode=home"
 
 func QueryElixir(word string) (model.Translations, error) {
+	result := model.Translations{
+		Link: ElixirURL,
+	}
+
+	start := time.Now()
+	defer func() {
+		result.TimeMs = time.Now().Sub(start).Milliseconds()
+	}()
+
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
@@ -28,8 +39,6 @@ func QueryElixir(word string) (model.Translations, error) {
 		{".cgifields", "fuzzy"},
 		{".cgifields", "quick"},
 	}
-
-	result := model.Translations{}
 
 	for _, f := range formFields {
 		err := writer.WriteField(f.key, f.val)
@@ -65,7 +74,7 @@ func QueryElixir(word string) (model.Translations, error) {
 		result.List = append(result.List, model.Translation{
 			Meta:        tag,
 			Arabic:      orth,
-			Translation: reflex,
+			Translation: strings.Trim(reflex, "\""),
 		})
 	})
 

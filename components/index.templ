@@ -1,5 +1,6 @@
 package components
 
+import "strconv"
 import "sahib/model"
 
 templ Index() {
@@ -13,6 +14,7 @@ templ Index() {
 
       <form
         class="grid"
+        id="form"
         hx-target="#result"
         hx-disabled-elt="find input[type='text'], find button"
         hx-post="/search"
@@ -24,6 +26,8 @@ templ Index() {
           <input type="text" name="search" id="search" placeholder="Search for a word: فعل"/>
           <button type="submit">Search !</button>
       </form>
+
+        <button onClick="copyToClip()">Copy to clip !</button>
 
         <span aria-busy="true" id="indicator" class="htmx-indicator">Looking up for the word...</span>
 
@@ -69,9 +73,9 @@ templ Index() {
 }
 
 
-templ Result(source string, rows []model.Translation) {
+templ Result(source string, url string, timeMs int64, rows []model.Translation) {
         <article>
-        <header> From <b>{source}</b></header>
+        <header> From <a href={templ.URL(url)}><b>{source}</b></a> ({strconv.Itoa(int(timeMs))}ms)</header>
             <table>
                 <thead>
                     <tr>
@@ -82,10 +86,10 @@ templ Result(source string, rows []model.Translation) {
                 </thead>
                 <tbody>
                     for _, row := range rows {
-                        <tr>
-                            <th>{ row.Meta }</th>
-                            <th>{ row.Arabic }</th>
-                            <th>{ row.Translation }</th>
+                        <tr onClick="mark(event)">
+                            <th class="sahib-meta">{ row.Meta }</th>
+                            <th class="sahib-arabic">{ row.Arabic }</th>
+                            <th class="sahib-translated">{ row.Translation }</th>
                         </tr>
                     }
                 </tbody>
@@ -96,7 +100,7 @@ templ Result(source string, rows []model.Translation) {
 templ Results(all []model.TranslationsAndSource) {
     <div>
         for _, ts := range all {
-            @Result(ts.Source, ts.Translations.List)
+            @Result(ts.Source, ts.Translations.Link, ts.Translations.TimeMs, ts.Translations.List)
             <br />
         }
     </div>

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"sahib/clients"
 )
 
@@ -12,10 +13,10 @@ func noErr(err error) {
 }
 
 func main() {
-	resp, err := clients.QueryMaany("%D8%AA%D9%81%D8%A7%D9%88%D8%B6")
+	resp, err := clients.QueryMaany(os.Args[1])
 	noErr(err)
 
-	for _, r := range resp {
-		fmt.Printf("row : %v\n", r)
+	for _, r := range resp.List {
+		fmt.Printf("row : %+v\n", r)
 	}
 }

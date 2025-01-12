@@ -8,19 +8,18 @@ import (
 	"strings"
 )
 
-
 func tashkil(sentences []string) ([]string, error) {
-    url := "https://www.tashkil.net/api/openai/tashkil"
+	url := "https://www.tashkil.net/api/openai/tashkil"
 
 	requestBody := map[string]interface{}{
-        "hasPremium": false,
-        "targetLanguage": "French",
-        "messages": []map[string]interface{}{
-            {
-                "role": "user",
-                "content": strings.Join(sentences, "\n"),
-            },
-        },
+		"hasPremium":     false,
+		"targetLanguage": "French",
+		"messages": []map[string]interface{}{
+			{
+				"role":    "user",
+				"content": strings.Join(sentences, "\n"),
+			},
+		},
 	}
 
 	// Serialize the request body to JSON
@@ -41,10 +40,10 @@ func tashkil(sentences []string) ([]string, error) {
 		return sentences, fmt.Errorf("Error reading body: %w\n", err)
 	}
 
-    out := strings.Split(string(body), "\n")
-    if len(out) != len(sentences) {
-        return sentences, fmt.Errorf("wrong number of sentences, expected %d got %d", len(sentences), len(out))
-    }
+	out := strings.Split(string(body), "\n")
+	if len(out) != len(sentences) {
+		return sentences, fmt.Errorf("wrong number of sentences, expected %d got %d", len(sentences), len(out))
+	}
 
-    return out, nil
+	return out, nil
 }

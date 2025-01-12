@@ -7,6 +7,7 @@ import (
 	"io"
 	"sahib/model"
 	"strings"
+	"time"
 )
 
 type PerplexityResp struct {
@@ -63,6 +64,11 @@ func queryPerplexity(token string, word string) (model.Translations, error) {
 	result := model.Translations{}
 	resp := PerplexityResp{}
 	url := "https://api.perplexity.ai/chat/completions"
+
+	start := time.Now()
+	defer func() {
+		result.TimeMs = time.Now().Sub(start).Milliseconds()
+	}()
 
 	// Create the request body using map[string]interface{}
 	requestBody := map[string]interface{}{

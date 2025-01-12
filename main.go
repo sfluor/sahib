@@ -7,6 +7,7 @@ import (
 	"sahib/clients"
 	"sahib/components"
 	"sahib/model"
+	"sync"
 )
 
 type queryFunc func(word string) (model.Translations, error)
@@ -48,14 +49,14 @@ func getQueryFunc(name string, apiKey string) (queryFunc, error) {
 	return fn, nil
 }
 
-func handleErr(err error, w http.ResponseWriter, msg string, args ...any) bool {
+func handleErr(res model.Translations, err error, w http.ResponseWriter, msg string, args ...any) (model.Translations, bool) {
 	if err != nil {
 		errStr := fmt.Sprintf(msg, args...)
 		log.Printf(errStr)
-		http.Error(w, errStr, 500)
-		return true
+		// http.Error(w, errStr, 500)
+		return model.Translations{Error: err.Error()}, true
 	}
-	return false
+	return res, false
 }
 
 func main() {
@@ -73,16 +74,15 @@ func main() {
 			search := r.FormValue(Search)
 			apiKey := r.FormValue(ApiKey)
 			fn, err := getQueryFunc(name, apiKey)
-			if handleErr(err, w, "Failed to create client for: %s: %w", name, err) {
+			if res, failed := handleErr(model.Translations{}, err, w, "Failed to create client for: %s: %w", name, err); failed {
+				component := components.Result(name, res.Link, res.TimeMs, res.List)
+				component.Render(r.Context(), w)
 				return
 			}
 
 			res, err := fn(search)
-			if handleErr(err, w, "Failed to query: %s: %w", name, err) {
-				return
-			}
-
-			component := components.Result(name, res.List)
+			res, _ = handleErr(res, err, w, "Failed to create client for: %s: %w", name, err)
+			component := components.Result(name, res.Link, res.TimeMs, res.List)
 			component.Render(r.Context(), w)
 		})
 	}
@@ -108,22 +108,27 @@ func main() {
 			sources = append(sources, source{name: "Perplexity", fn: client.Query})
 		}
 
-		all := []model.TranslationsAndSource{}
+		all := make([]model.TranslationsAndSource, len(sourceNames))
 
-		for _, name := range sourceNames {
+		var wg sync.WaitGroup
+		for i, name := range sourceNames {
 			fn, err := getQueryFunc(name, apiKey)
-			if handleErr(err, w, "Failed to create client for: %s: %w", name, err) {
-				return
+
+			if res, failed := handleErr(model.Translations{}, err, w, "Failed to create client for: %s: %w", name, err); failed {
+				all[i] = model.TranslationsAndSource{Translations: res, Source: name}
+				continue
 			}
 
-			res, err := fn(search)
-			if handleErr(err, w, "Failed to query: %s: %w", name, err) {
-				return
-			}
-
-			all = append(all, model.TranslationsAndSource{Translations: res, Source: name})
+			wg.Add(1)
+			go func(idx int) {
+				defer wg.Done()
+				res, err := fn(search)
+				res, _ = handleErr(res, err, w, "Failed to create client for: %s: %w", name, err)
+				all[idx] = model.TranslationsAndSource{Translations: res, Source: name}
+			}(i)
 		}
 
+		wg.Wait()
 		component := components.Results(all)
 		component.Render(r.Context(), w)
 	})

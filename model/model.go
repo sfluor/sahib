@@ -6,8 +6,10 @@ type TranslationsAndSource struct {
 }
 
 type Translations struct {
-	List  []Translation
-	Error string
+	TimeMs int64
+	Link   string
+	List   []Translation
+	Error  string
 }
 
 type Translation struct {
