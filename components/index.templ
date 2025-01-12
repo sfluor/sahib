@@ -68,12 +68,11 @@ templ Index() {
 </html>
 }
 
-templ Result(pplx model.PerplexityResp, elxr []model.ElixirResp, maany []model.MaanyResp, elixirURL string) {
+templ Result(all []model.TranslationsAndSource) {
     <div>
-        <span>Traduction: { pplx.Translation }</span>
-        <br />
+        for _, ts := range all {
         <article>
-        <header> From <a href={ templ.URL(elixirURL) }>Elixir </a></header>
+        <header> From <b>{ts.Source}</b></header>
             <table>
                 <thead>
                     <tr>
@@ -83,9 +82,9 @@ templ Result(pplx model.PerplexityResp, elxr []model.ElixirResp, maany []model.M
                     </tr>
                 </thead>
                 <tbody>
-                    for _, row := range elxr {
+                    for _, row := range ts.Translations.List {
                         <tr>
-                            <th>{ row.Tag }</th>
+                            <th>{ row.Meta }</th>
                             <th>{ row.Arabic }</th>
                             <th>{ row.Translation }</th>
                         </tr>
@@ -94,44 +93,6 @@ templ Result(pplx model.PerplexityResp, elxr []model.ElixirResp, maany []model.M
             </table>
         </article>
         <br />
-        <article>
-        <header> From Maany </header>
-            <table>
-                <thead>
-                    <tr>
-                        <th scope="col">Arabic</th>
-                        <th scope="col">Translation</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    for _, row := range maany {
-                        <tr>
-                            <th>{ row.Arabic }</th>
-                            <th>{ row.Translation }</th>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </article>
-        <br />
-        <article>
-            <header><b>From perplexity</b></header>
-            <table>
-                <thead>
-                    <tr>
-                        <th scope="col">Arabic</th>
-                        <th scope="col">Translation</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    for _, example := range pplx.Examples {
-                        <tr>
-                            <th>{ example.Sentence }</th>
-                            <th>{ example.Translation }</th>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </article>
+        }
     </div>
 }

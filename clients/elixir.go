@@ -12,7 +12,7 @@ import (
 
 const ElixirURL = "https://quest.ms.mff.cuni.cz/cgi-bin/elixir/index.fcgi?mode=home"
 
-func QueryElixir(word string) ([]model.ElixirResp, error) {
+func QueryElixir(word string) (model.Translations, error) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
@@ -29,21 +29,23 @@ func QueryElixir(word string) ([]model.ElixirResp, error) {
 		{".cgifields", "quick"},
 	}
 
+	result := model.Translations{}
+
 	for _, f := range formFields {
 		err := writer.WriteField(f.key, f.val)
 		if err != nil {
-			return nil, fmt.Errorf("Couldn't write form field %s: %v\n", f.key, err)
+			return result, fmt.Errorf("Couldn't write form field %s: %v\n", f.key, err)
 		}
 	}
 
 	err := writer.Close()
 	if err != nil {
-		return nil, fmt.Errorf("Couldn't write form multipart %v\n", err)
+		return result, fmt.Errorf("Couldn't write form multipart %v\n", err)
 	}
 
 	res, err := queryURL("POST", ElixirURL, body, map[string]string{ContentType: writer.FormDataContentType()}, false)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to query elixir: %w", err)
+		return result, fmt.Errorf("Failed to query elixir: %w", err)
 	}
 	defer res.Body.Close()
 
@@ -53,7 +55,6 @@ func QueryElixir(word string) ([]model.ElixirResp, error) {
 		log.Fatal(err)
 	}
 
-	result := []model.ElixirResp{}
 	// Find the words
 	doc.Find(".lexeme").Each(func(i int, s *goquery.Selection) {
 		// For each item found, get the title
@@ -61,8 +62,8 @@ func QueryElixir(word string) ([]model.ElixirResp, error) {
 		orth := s.Find(".orth").Text()
 		reflex := s.Find(".reflex").Text()
 
-		result = append(result, model.ElixirResp{
-			Tag:         tag,
+		result.List = append(result.List, model.Translation{
+			Meta:        tag,
 			Arabic:      orth,
 			Translation: reflex,
 		})

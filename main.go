@@ -1,17 +1,20 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"sahib/clients"
 	"sahib/components"
 	"sahib/model"
-	"strings"
 )
+
+type queryFunc func(word string) (model.Translations, error)
+
+type source struct {
+	name string
+	fn   queryFunc
+}
 
 func main() {
 	mainHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -24,151 +27,42 @@ func main() {
 	http.HandleFunc("POST /search", func(w http.ResponseWriter, r *http.Request) {
 		search := r.FormValue("search")
 		log.Printf("Searching for: %s", search)
+
 		apiKey := r.FormValue("apiKey")
-		res, err := queryPerplexity(apiKey, search)
 
-		if err != nil {
-			errStr := fmt.Sprintf("An error occurred querying perplexity: %w", err)
-			log.Printf(errStr)
-			http.Error(w, errStr, 500)
-			return
+		sources := []source{
+			{
+				name: "Elixir",
+				fn:   clients.QueryElixir,
+			},
+			{
+				name: "Maany",
+				fn:   clients.QueryMaany,
+			},
 		}
 
-		elixir, err := clients.QueryElixir(search)
-		if err != nil {
-			errStr := fmt.Sprintf("An error occurred querying elixir: %w", err)
-			log.Printf(errStr)
-			http.Error(w, errStr, 500)
-			return
+		if apiKey != "" {
+			client := clients.PerplexityClient{ApiKey: apiKey}
+			sources = append(sources, source{name: "Perplexity", fn: client.Query})
 		}
 
-		maany, err := clients.QueryMaany(search)
-		if err != nil {
-			errStr := fmt.Sprintf("An error occurred querying maany: %w", err)
-			log.Printf(errStr)
-			http.Error(w, errStr, 500)
-			return
-		}
+		all := []model.TranslationsAndSource{}
 
-		component := components.Result(res, elixir, maany, clients.ElixirURL)
+		for _, src := range sources {
+			res, err := src.fn(search)
+			if err != nil {
+				errStr := fmt.Sprintf("An error occurred querying %s: %w", src.name, err)
+				log.Printf(errStr)
+				http.Error(w, errStr, 500)
+				return
+			}
+			all = append(all, model.TranslationsAndSource{Translations: res, Source: src.name})
+
+		}
+		component := components.Result(all)
 		component.Render(r.Context(), w)
 	})
 
 	log.Print("Listening...")
 	log.Fatal(http.ListenAndServe(":8080", nil))
-}
-
-func prompt(word string) string {
-	count := 5
-	target := "french"
-	return fmt.Sprintf(`Give me %d examples of useful and relevant sentences from medias or stories with the proper arabic diacritics (harakats) on all words.
-
-The word is: %s
-
-The translation language should be %s
-
-The output should be in JSON format like so:
-
-{
-    "translation": "The translation of the word",
-    "examples": [
-         {"sentence": "An example of sentence", "translation": "The translation of the setence in the target language"},
-     ]
-}
-`, count, word, target)
-}
-
-type PerplexityAPIResp struct {
-	Choices []PerplexityAPIChoice `json:"choices"`
-}
-
-type PerplexityAPIChoice struct {
-	Message PerplexityAPIMessage `json:"message"`
-}
-
-type PerplexityAPIMessage struct {
-	Content string `json:"content"`
-}
-
-func queryPerplexity(token string, word string) (model.PerplexityResp, error) {
-	resp := model.PerplexityResp{}
-	url := "https://api.perplexity.ai/chat/completions"
-
-	// Create the request body using map[string]interface{}
-	requestBody := map[string]interface{}{
-		"model": "llama-3.1-sonar-small-128k-online",
-		"messages": []map[string]string{
-			{
-				"role":    "system",
-				"content": "Don't repeat yourself, be precise and concise.",
-			},
-			{
-				"role":    "user",
-				"content": prompt(word),
-			},
-		},
-		"max_tokens":               "1000",
-		"temperature":              0.2,
-		"top_p":                    0.9,
-		"search_domain_filter":     []string{"perplexity.ai"},
-		"return_images":            false,
-		"return_related_questions": false,
-		"search_recency_filter":    "month",
-		"top_k":                    0,
-		"stream":                   false,
-		"presence_penalty":         0,
-		"frequency_penalty":        1,
-	}
-
-	// Serialize the request body to JSON
-	jsonBody, err := json.Marshal(requestBody)
-	if err != nil {
-		return resp, fmt.Errorf("Error serializing request body: %w\n", err)
-	}
-
-	// Create a new HTTP request
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonBody))
-	if err != nil {
-		return resp, fmt.Errorf("Error creating request: %w\n", err)
-	}
-
-	// Set headers
-	req.Header.Set("Authorization", "Bearer "+token)
-	req.Header.Set("Content-Type", "application/json")
-
-	// Send the request
-	client := &http.Client{}
-	rawResp, err := client.Do(req)
-	if err != nil {
-		return resp, fmt.Errorf("Error sending request: %w\n", err)
-	}
-	defer rawResp.Body.Close()
-
-	// Read the response body
-	body, err := io.ReadAll(rawResp.Body)
-	if err != nil {
-		return resp, fmt.Errorf("Error reading body: %w\n", err)
-	}
-
-	// Check the response status code
-	if rawResp.StatusCode != http.StatusOK {
-		return resp, fmt.Errorf("Unexpected status code: %d: %s", rawResp.StatusCode, string(body))
-	}
-
-	apiResp := PerplexityAPIResp{}
-	if err := json.Unmarshal(body, &apiResp); err != nil {
-		return resp, fmt.Errorf("Error deserializing api response: %w\n", err)
-	}
-
-	content := apiResp.Choices[0].Message.Content
-	log.Printf("content: %s", content)
-	if !strings.HasPrefix(content, "{\n") {
-		content = strings.Split(strings.Split(content, "```json")[1], "``")[0]
-	}
-
-	if err := json.Unmarshal([]byte(content), &resp); err != nil {
-		return resp, fmt.Errorf("Error deserializing api response content: %w\n", err)
-	}
-
-	return resp, nil
 }

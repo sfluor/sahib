@@ -9,12 +9,22 @@ import (
 	"strings"
 )
 
-type PerplexityClient struct {
-	apiKey string
+type PerplexityResp struct {
+	Translation string                  `json:"translation"`
+	Examples    []PerplexityRespExample `json:"examples"`
 }
 
-func (c *PerplexityClient) Query(word string) (model.PerplexityResp, error) {
-	return queryPerplexity(c.apiKey, word)
+type PerplexityRespExample struct {
+	Sentence    string `json:"sentence"`
+	Translation string `json:"translation"`
+}
+
+type PerplexityClient struct {
+	ApiKey string
+}
+
+func (c *PerplexityClient) Query(word string) (model.Translations, error) {
+	return queryPerplexity(c.ApiKey, word)
 }
 
 func prompt(word string) string {
@@ -49,8 +59,9 @@ type PerplexityAPIMessage struct {
 	Content string `json:"content"`
 }
 
-func queryPerplexity(token string, word string) (model.PerplexityResp, error) {
-	resp := model.PerplexityResp{}
+func queryPerplexity(token string, word string) (model.Translations, error) {
+	result := model.Translations{}
+	resp := PerplexityResp{}
 	url := "https://api.perplexity.ai/chat/completions"
 
 	// Create the request body using map[string]interface{}
@@ -82,7 +93,7 @@ func queryPerplexity(token string, word string) (model.PerplexityResp, error) {
 	// Serialize the request body to JSON
 	jsonBody, err := json.Marshal(requestBody)
 	if err != nil {
-		return resp, fmt.Errorf("Error serializing request body: %w\n", err)
+		return result, fmt.Errorf("Error serializing request body: %w\n", err)
 	}
 
 	rawResp, err := queryURL("POST", url, bytes.NewBuffer(jsonBody), map[string]string{
@@ -90,19 +101,19 @@ func queryPerplexity(token string, word string) (model.PerplexityResp, error) {
 		"Content-Type":  "application/json",
 	}, false)
 	if err != nil {
-		return resp, fmt.Errorf("Error sending perplexity request: %w\n", err)
+		return result, fmt.Errorf("Error sending perplexity request: %w\n", err)
 	}
 	defer rawResp.Body.Close()
 
 	// Read the response body
 	body, err := io.ReadAll(rawResp.Body)
 	if err != nil {
-		return resp, fmt.Errorf("Error reading body: %w\n", err)
+		return result, fmt.Errorf("Error reading body: %w\n", err)
 	}
 
 	apiResp := PerplexityAPIResp{}
 	if err := json.Unmarshal(body, &apiResp); err != nil {
-		return resp, fmt.Errorf("Error deserializing api response: %w\n", err)
+		return result, fmt.Errorf("Error deserializing api response: %w\n", err)
 	}
 
 	content := apiResp.Choices[0].Message.Content
@@ -111,8 +122,20 @@ func queryPerplexity(token string, word string) (model.PerplexityResp, error) {
 	}
 
 	if err := json.Unmarshal([]byte(content), &resp); err != nil {
-		return resp, fmt.Errorf("Error deserializing api response content: %w\n", err)
+		return result, fmt.Errorf("Error deserializing api response content: %w\n", err)
 	}
 
-	return resp, nil
+	result.List = append(result.List, model.Translation{
+		Arabic:      word,
+		Translation: resp.Translation,
+	})
+
+	for _, row := range resp.Examples {
+		result.List = append(result.List, model.Translation{
+			Arabic:      row.Sentence,
+			Translation: row.Translation,
+		})
+	}
+
+	return result, nil
 }
