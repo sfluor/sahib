@@ -16,6 +16,48 @@ type source struct {
 	fn   queryFunc
 }
 
+const (
+	SourceElixir     = "Elixir"
+	SourceMaany      = "Maany"
+	SourcePerplexity = "Perplexity"
+
+	ApiKey = "apiKey"
+	Search = "search"
+)
+
+func getQueryFunc(name string, apiKey string) (queryFunc, error) {
+	var fn queryFunc
+	switch name {
+	case SourceElixir:
+		fn = clients.QueryElixir
+	case SourceMaany:
+		fn = clients.QueryMaany
+	case SourcePerplexity:
+		if apiKey != "" {
+			client := clients.PerplexityClient{ApiKey: apiKey}
+			fn = client.Query
+		} else {
+			return func(word string) (model.Translations, error) {
+				return model.Translations{}, nil
+			}, nil
+		}
+	default:
+		return nil, fmt.Errorf("unknown source: " + name)
+	}
+
+	return fn, nil
+}
+
+func handleErr(err error, w http.ResponseWriter, msg string, args ...any) bool {
+	if err != nil {
+		errStr := fmt.Sprintf(msg, args...)
+		log.Printf(errStr)
+		http.Error(w, errStr, 500)
+		return true
+	}
+	return false
+}
+
 func main() {
 	mainHandler := func(w http.ResponseWriter, r *http.Request) {
 		component := components.Index()
@@ -24,11 +66,31 @@ func main() {
 
 	http.HandleFunc("GET /", mainHandler)
 
-	http.HandleFunc("POST /search", func(w http.ResponseWriter, r *http.Request) {
-		search := r.FormValue("search")
-		log.Printf("Searching for: %s", search)
+	sourceNames := []string{SourceElixir, SourceMaany, SourcePerplexity}
 
-		apiKey := r.FormValue("apiKey")
+	for _, name := range sourceNames {
+		http.HandleFunc("POST /search/"+name, func(w http.ResponseWriter, r *http.Request) {
+			search := r.FormValue(Search)
+			apiKey := r.FormValue(ApiKey)
+			fn, err := getQueryFunc(name, apiKey)
+			if handleErr(err, w, "Failed to create client for: %s: %w", name, err) {
+				return
+			}
+
+			res, err := fn(search)
+			if handleErr(err, w, "Failed to query: %s: %w", name, err) {
+				return
+			}
+
+			component := components.Result(name, res.List)
+			component.Render(r.Context(), w)
+		})
+	}
+
+	http.HandleFunc("POST /search", func(w http.ResponseWriter, r *http.Request) {
+		search := r.FormValue(Search)
+		apiKey := r.FormValue(ApiKey)
+		log.Printf("Searching for: %s", search)
 
 		sources := []source{
 			{
@@ -48,18 +110,21 @@ func main() {
 
 		all := []model.TranslationsAndSource{}
 
-		for _, src := range sources {
-			res, err := src.fn(search)
-			if err != nil {
-				errStr := fmt.Sprintf("An error occurred querying %s: %w", src.name, err)
-				log.Printf(errStr)
-				http.Error(w, errStr, 500)
+		for _, name := range sourceNames {
+			fn, err := getQueryFunc(name, apiKey)
+			if handleErr(err, w, "Failed to create client for: %s: %w", name, err) {
 				return
 			}
-			all = append(all, model.TranslationsAndSource{Translations: res, Source: src.name})
 
+			res, err := fn(search)
+			if handleErr(err, w, "Failed to query: %s: %w", name, err) {
+				return
+			}
+
+			all = append(all, model.TranslationsAndSource{Translations: res, Source: name})
 		}
-		component := components.Result(all)
+
+		component := components.Results(all)
 		component.Render(r.Context(), w)
 	})
 

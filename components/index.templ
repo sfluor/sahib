@@ -68,11 +68,10 @@ templ Index() {
 </html>
 }
 
-templ Result(all []model.TranslationsAndSource) {
-    <div>
-        for _, ts := range all {
+
+templ Result(source string, rows []model.Translation) {
         <article>
-        <header> From <b>{ts.Source}</b></header>
+        <header> From <b>{source}</b></header>
             <table>
                 <thead>
                     <tr>
@@ -82,7 +81,7 @@ templ Result(all []model.TranslationsAndSource) {
                     </tr>
                 </thead>
                 <tbody>
-                    for _, row := range ts.Translations.List {
+                    for _, row := range rows {
                         <tr>
                             <th>{ row.Meta }</th>
                             <th>{ row.Arabic }</th>
@@ -92,7 +91,13 @@ templ Result(all []model.TranslationsAndSource) {
                 </tbody>
             </table>
         </article>
-        <br />
+    }
+
+templ Results(all []model.TranslationsAndSource) {
+    <div>
+        for _, ts := range all {
+            @Result(ts.Source, ts.Translations.List)
+            <br />
         }
     </div>
 }
