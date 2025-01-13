@@ -26,7 +26,7 @@ func QueryMaany(word string) (*model.Translations, error) {
 	}
 	defer res.Body.Close()
 
-    log.Printf("Done request")
+	log.Printf("Done request")
 
 	// Load the HTML document
 	doc, err := goquery.NewDocumentFromReader(res.Body)
@@ -34,19 +34,19 @@ func QueryMaany(word string) (*model.Translations, error) {
 		return results, fmt.Errorf("failed to parse html body: %w", err)
 	}
 
-    log.Printf("Done parsing")
+	log.Printf("Done parsing")
 
 	toTashkil := []string{}
 	doc.Find(".panel-lightyellow").Find(".row").Each(func(i int, s *goquery.Selection) {
-		arabic := s.Find(".text-left").Text()
-		translation := s.Find(".text-right").Text()
+		arabic := strings.Trim(s.Find(".text-left").Text(), " ..")
+		translation := strings.Trim(s.Find(".text-right").Text(), " .")
 
 		toTashkil = append(toTashkil, strings.TrimSpace(arabic))
 
 		results.List = append(results.List, model.Translation{Arabic: arabic, Translation: translation})
 	})
 
-    // TODO: tashkil is very slow so do it in two paths
+	// TODO: tashkil is very slow so do it in two paths
 	// tashkil, err := tashkil(toTashkil)
 	// if err != nil {
 	// 	log.Printf("Couldn't add tashkil to result: %+v: %s", results, err)

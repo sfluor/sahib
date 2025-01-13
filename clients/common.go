@@ -12,7 +12,7 @@ import (
 const ContentType = "Content-Type"
 
 func elapsed(start time.Time) string {
-    return time.Now().Sub(start).Truncate(10 * time.Millisecond).String()
+	return time.Now().Sub(start).Truncate(10 * time.Millisecond).String()
 }
 
 func queryURL(

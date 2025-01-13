@@ -7,9 +7,9 @@ type TranslationsAndSource struct {
 
 type Translations struct {
 	Elapsed string
-	Link   string
-	List   []Translation
-	Error  string
+	Link    string
+	List    []Translation
+	Error   string
 }
 
 type Translation struct {
