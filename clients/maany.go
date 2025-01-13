@@ -10,14 +10,14 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-func QueryMaany(word string) (model.Translations, error) {
+func QueryMaany(word string) (*model.Translations, error) {
 	url := fmt.Sprintf("https://www.almaany.com/fr/dict/ar-fr/%s/?c=Tout", word)
-	results := model.Translations{
+	results := &model.Translations{
 		Link: url,
 	}
 	start := time.Now()
 	defer func() {
-		results.TimeMs = time.Now().Sub(start).Milliseconds()
+		results.Elapsed = elapsed(start)
 	}()
 
 	res, err := queryURL("GET", url, nil, nil, true)
@@ -26,11 +26,15 @@ func QueryMaany(word string) (model.Translations, error) {
 	}
 	defer res.Body.Close()
 
+    log.Printf("Done request")
+
 	// Load the HTML document
 	doc, err := goquery.NewDocumentFromReader(res.Body)
 	if err != nil {
 		return results, fmt.Errorf("failed to parse html body: %w", err)
 	}
+
+    log.Printf("Done parsing")
 
 	toTashkil := []string{}
 	doc.Find(".panel-lightyellow").Find(".row").Each(func(i int, s *goquery.Selection) {
@@ -42,15 +46,16 @@ func QueryMaany(word string) (model.Translations, error) {
 		results.List = append(results.List, model.Translation{Arabic: arabic, Translation: translation})
 	})
 
-	tashkil, err := tashkil(toTashkil)
-	if err != nil {
-		log.Printf("Couldn't add tashkil to result: %+v: %s", results, err)
-		return results, nil
-	}
+    // TODO: tashkil is very slow so do it in two paths
+	// tashkil, err := tashkil(toTashkil)
+	// if err != nil {
+	// 	log.Printf("Couldn't add tashkil to result: %+v: %s", results, err)
+	// 	return results, nil
+	// }
 
-	for i := range results.List {
-		results.List[i].Arabic = tashkil[i]
-	}
+	// for i := range results.List {
+	// 	results.List[i].Arabic = tashkil[i]
+	// }
 
 	return results, nil
 }

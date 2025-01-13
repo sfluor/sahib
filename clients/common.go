@@ -4,11 +4,16 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"golang.org/x/net/http2"
 )
 
 const ContentType = "Content-Type"
+
+func elapsed(start time.Time) string {
+    return time.Now().Sub(start).Truncate(10 * time.Millisecond).String()
+}
 
 func queryURL(
 	typ string,

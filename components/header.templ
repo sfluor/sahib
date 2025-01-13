@@ -10,6 +10,8 @@ templ Header() {
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
     >
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <script>
         const PERPLEXITY_API_KEY = "perplexityApiKey";
         function loadAPIKey() {
@@ -23,6 +25,27 @@ templ Header() {
         const sahibArabic = "sahib-arabic";
         const sahibTranslated = "sahib-translated";
         const sahibMarked = "sahib-marked";
+        const sahibCheckbox = "sahib-checkbox";
+
+        function showNotif(msg, isErr) {
+            if (isErr) {
+                console.error(msg);
+            } else {
+                console.log(msg);
+            }
+            Toastify({
+              text: msg,
+              duration: 2000,
+              gravity: "bottom",
+              position: "left",
+              stopOnFocus: true,
+              style: {
+                background: isErr ?
+                     "linear-gradient(to right, rgb(255, 95, 109), rgb(255, 195, 113))"
+                    : "linear-gradient(to right, #00b09b, #96c93d)",
+              },
+            }).showToast();
+        }
 
         function copyToClip() {
             const arabics = [];
@@ -39,9 +62,15 @@ templ Header() {
                 translateds.push(translated);
             }
 
+            console.log(arabics.length + translateds.length === 0);
+            if (arabics.length + translateds.lengths === 0) {
+                showNotif("Please select some translations before copying to clipboard", true);
+                return
+            }
+
             const out = arabics.join("\n") + "\n---\n" + translateds.join("\n");
-            console.log(out);
             navigator.clipboard.writeText(out);
+            showNotif("Copied selection to clipboard\n");
         }
 
         // Mark the first row
@@ -51,6 +80,7 @@ templ Header() {
                 node = node.parentNode;
             }
 
+            const check = node.getElementsByClassName(sahibCheckbox)[0];
             if (node.classList.contains(sahibMarked)) {
                 node.classList.remove(sahibMarked);
             } else {
@@ -59,8 +89,25 @@ templ Header() {
         }
     </script>
     <style>
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .content {
+      flex: 1 0 auto;
+    }
+    .footer {
+      flex-shrink: 0;
+    }
+
     .sahib-marked > th {
         color: rgb(57, 135, 18);
+        font-weight: bold;
     }
 
     </style>

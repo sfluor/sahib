@@ -1,12 +1,12 @@
 package model
 
 type TranslationsAndSource struct {
-	Translations Translations
+	Translations *Translations
 	Source       string
 }
 
 type Translations struct {
-	TimeMs int64
+	Elapsed string
 	Link   string
 	List   []Translation
 	Error  string

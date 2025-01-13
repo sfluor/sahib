@@ -14,14 +14,14 @@ import (
 
 const ElixirURL = "https://quest.ms.mff.cuni.cz/cgi-bin/elixir/index.fcgi?mode=home"
 
-func QueryElixir(word string) (model.Translations, error) {
-	result := model.Translations{
+func QueryElixir(word string) (*model.Translations, error) {
+	result := &model.Translations{
 		Link: ElixirURL,
 	}
 
 	start := time.Now()
 	defer func() {
-		result.TimeMs = time.Now().Sub(start).Milliseconds()
+		result.Elapsed = elapsed(start)
 	}()
 
 	body := &bytes.Buffer{}
@@ -74,7 +74,7 @@ func QueryElixir(word string) (model.Translations, error) {
 		result.List = append(result.List, model.Translation{
 			Meta:        tag,
 			Arabic:      orth,
-			Translation: strings.Trim(reflex, "\""),
+			Translation: strings.ReplaceAll(reflex, "\"", ""),
 		})
 	})
 

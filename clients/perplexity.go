@@ -24,7 +24,7 @@ type PerplexityClient struct {
 	ApiKey string
 }
 
-func (c *PerplexityClient) Query(word string) (model.Translations, error) {
+func (c *PerplexityClient) Query(word string) (*model.Translations, error) {
 	return queryPerplexity(c.ApiKey, word)
 }
 
@@ -60,14 +60,14 @@ type PerplexityAPIMessage struct {
 	Content string `json:"content"`
 }
 
-func queryPerplexity(token string, word string) (model.Translations, error) {
-	result := model.Translations{}
+func queryPerplexity(token string, word string) (*model.Translations, error) {
+	result := &model.Translations{}
 	resp := PerplexityResp{}
 	url := "https://api.perplexity.ai/chat/completions"
 
 	start := time.Now()
 	defer func() {
-		result.TimeMs = time.Now().Sub(start).Milliseconds()
+		result.Elapsed = elapsed(start)
 	}()
 
 	// Create the request body using map[string]interface{}

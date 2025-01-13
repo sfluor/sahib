@@ -1,6 +1,5 @@
 package components
 
-import "strconv"
 import "sahib/model"
 
 templ Index() {
@@ -9,12 +8,12 @@ templ Index() {
 @Header()
 
 <body>
-    <main class="container">
+    <main class="content container">
       <h1>صاحب اللغة</h1>
 
       <form
-        class="grid"
         id="form"
+        role="search"
         hx-target="#result"
         hx-disabled-elt="find input[type='text'], find button"
         hx-post="/search"
@@ -23,26 +22,31 @@ templ Index() {
         hx-include="#apiKey"
         hx-indicator="#indicator"
       >
-          <input type="text" name="search" id="search" placeholder="Search for a word: فعل"/>
-          <button type="submit">Search !</button>
+          <input type="search" name="search" id="search" aria-label="Search" placeholder="Search for a word: فعل"/>
+          <button type="submit">Search</button>
       </form>
 
-        <button onClick="copyToClip()">Copy to clip !</button>
+        <button
+            style="position: fixed; bottom: 5%; right: 5%; width: 75px; z-index: 999;"
+            class="contrast"
+            onClick="copyToClip()"
+        >
+            @CopyIcon()
+        </button>
 
         <span aria-busy="true" id="indicator" class="htmx-indicator">Looking up for the word...</span>
 
         <div class="grid">
             <div id="result"> Start searching ! </div>
         </div>
-
-        <footer>
-            <div class="grid">
-                <input type="text" id="registerKey" placeholder="Your Perplexity API Key"/>
-                <button id="registerKeyButton">Register your API Key</button>
-            </div>
-        </footer>
-        <input id="apiKey" name="apiKey" style="display: none" />
     </main>
+    <footer class="container" style="max-width: 600px">
+        <fieldset role="group">
+            <input type="text" id="registerKey" placeholder="Perplexity API Key (For more results)"/>
+            <input type="submit" id="registerKeyButton" value="Register" />
+        </fieldset>
+    </footer>
+    <input id="apiKey" name="apiKey" style="display: none" />
 </body>
 <script>
     // Scoping function to avoid redeclaration of const problems with htmx executing the script multiple times.
@@ -65,7 +69,8 @@ templ Index() {
                 const input = document.getElementById("registerKey");
                 registerAPIKey(input.value);
                 apiKeyInp.value = input.value;
-                input.value = "API Key registered !";
+                input.value = "";
+                showNotif("API Key registered !");
             });
     })();
 </script>
@@ -73,35 +78,43 @@ templ Index() {
 }
 
 
-templ Result(source string, url string, timeMs int64, rows []model.Translation) {
+templ Result(source string, url string, elapsed string, rows []model.Translation) {
+    if len(rows) > 0 {
         <article>
-        <header> From <a href={templ.URL(url)}><b>{source}</b></a> ({strconv.Itoa(int(timeMs))}ms)</header>
+        <header> From <a href={templ.URL(url)}><b>{source}</b></a> ({elapsed})</header>
             <table>
                 <thead>
                     <tr>
                         <th scope="col">Type</th>
                         <th scope="col">Arabic</th>
                         <th scope="col">Translation</th>
+                        <th scope="col">Copy</th>
                     </tr>
                 </thead>
                 <tbody>
                     for _, row := range rows {
-                        <tr onClick="mark(event)">
+                        <tr>
                             <th class="sahib-meta">{ row.Meta }</th>
                             <th class="sahib-arabic">{ row.Arabic }</th>
                             <th class="sahib-translated">{ row.Translation }</th>
+                            <th><input onchange="mark(event)" type="checkbox" class="sahib-checkbox" /></th>
                         </tr>
                     }
                 </tbody>
             </table>
         </article>
     }
+}
 
 templ Results(all []model.TranslationsAndSource) {
     <div>
         for _, ts := range all {
-            @Result(ts.Source, ts.Translations.Link, ts.Translations.TimeMs, ts.Translations.List)
+            @Result(ts.Source, ts.Translations.Link, ts.Translations.Elapsed, ts.Translations.List)
             <br />
         }
     </div>
+}
+
+templ CopyIcon() {
+<svg clip-rule="evenodd" fill-rule="evenodd" stroke-linejoin="round" stroke-miterlimit="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="m6 19v2c0 .621.52 1 1 1h2v-1.5h-1.5v-1.5zm7.5 3h-3.5v-1.5h3.5zm4.5 0h-3.5v-1.5h3.5zm4-3h-1.5v1.5h-1.5v1.5h2c.478 0 1-.379 1-1zm-1.5-1v-3.363h1.5v3.363zm0-4.363v-3.637h1.5v3.637zm-13-3.637v3.637h-1.5v-3.637zm11.5-4v1.5h1.5v1.5h1.5v-2c0-.478-.379-1-1-1zm-10 0h-2c-.62 0-1 .519-1 1v2h1.5v-1.5h1.5zm4.5 1.5h-3.5v-1.5h3.5zm3-1.5v-2.5h-13v13h2.5v-1.863h1.5v3.363h-4.5c-.48 0-1-.379-1-1v-14c0-.481.38-1 1-1h14c.621 0 1 .522 1 1v4.5h-3.5v-1.5z" fill-rule="nonzero"/></svg>
 }

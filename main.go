@@ -10,7 +10,7 @@ import (
 	"sync"
 )
 
-type queryFunc func(word string) (model.Translations, error)
+type queryFunc func(word string) (*model.Translations, error)
 
 type source struct {
 	name string
@@ -38,8 +38,8 @@ func getQueryFunc(name string, apiKey string) (queryFunc, error) {
 			client := clients.PerplexityClient{ApiKey: apiKey}
 			fn = client.Query
 		} else {
-			return func(word string) (model.Translations, error) {
-				return model.Translations{}, nil
+			return func(word string) (*model.Translations, error) {
+				return &model.Translations{}, nil
 			}, nil
 		}
 	default:
@@ -49,13 +49,14 @@ func getQueryFunc(name string, apiKey string) (queryFunc, error) {
 	return fn, nil
 }
 
-func handleErr(res model.Translations, err error, w http.ResponseWriter, msg string, args ...any) (model.Translations, bool) {
+func handleErr(res *model.Translations, err error, w http.ResponseWriter, msg string, args ...any) (*model.Translations, bool) {
 	if err != nil {
 		errStr := fmt.Sprintf(msg, args...)
 		log.Printf(errStr)
 		// http.Error(w, errStr, 500)
-		return model.Translations{Error: err.Error()}, true
+		return &model.Translations{Error: err.Error()}, true
 	}
+
 	return res, false
 }
 
@@ -74,15 +75,15 @@ func main() {
 			search := r.FormValue(Search)
 			apiKey := r.FormValue(ApiKey)
 			fn, err := getQueryFunc(name, apiKey)
-			if res, failed := handleErr(model.Translations{}, err, w, "Failed to create client for: %s: %w", name, err); failed {
-				component := components.Result(name, res.Link, res.TimeMs, res.List)
+			if res, failed := handleErr(nil, err, w, "Failed to create client for: %s: %w", name, err); failed {
+				component := components.Result(name, res.Link, res.Elapsed, res.List)
 				component.Render(r.Context(), w)
 				return
 			}
 
 			res, err := fn(search)
 			res, _ = handleErr(res, err, w, "Failed to create client for: %s: %w", name, err)
-			component := components.Result(name, res.Link, res.TimeMs, res.List)
+			component := components.Result(name, res.Link, res.Elapsed, res.List)
 			component.Render(r.Context(), w)
 		})
 	}
@@ -114,7 +115,7 @@ func main() {
 		for i, name := range sourceNames {
 			fn, err := getQueryFunc(name, apiKey)
 
-			if res, failed := handleErr(model.Translations{}, err, w, "Failed to create client for: %s: %w", name, err); failed {
+			if res, failed := handleErr(nil, err, w, "Failed to create client for: %s: %w", name, err); failed {
 				all[i] = model.TranslationsAndSource{Translations: res, Source: name}
 				continue
 			}
