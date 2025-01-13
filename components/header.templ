@@ -62,8 +62,8 @@ templ Header() {
                 translateds.push(translated);
             }
 
-            console.log(arabics.length + translateds.length === 0);
-            if (arabics.length + translateds.lengths === 0) {
+            const hasSelected = arabics.length + translateds.length === 0;
+            if (hasSelected) {
                 showNotif("Please select some translations before copying to clipboard", true);
                 return
             }
@@ -71,6 +71,7 @@ templ Header() {
             const out = arabics.join("\n") + "\n---\n" + translateds.join("\n");
             navigator.clipboard.writeText(out);
             showNotif("Copied selection to clipboard\n");
+            console.log("Copied", out);
         }
 
         // Mark the first row
