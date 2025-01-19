@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"sahib/clients"
 	"sahib/components"
 	"sahib/model"
@@ -61,6 +62,17 @@ func handleErr(res *model.Translations, err error, w http.ResponseWriter, msg st
 }
 
 func main() {
+    if len(os.Args) < 2 {
+        panic("Please provide the path to the hans wehr sqlite database")
+    }
+
+    sqlpath := os.Args[1]
+    hansWehr, err := clients.NewHansWehrClient(sqlpath)
+    if err != nil {
+        panic(err)
+    }
+
+
 	mainHandler := func(w http.ResponseWriter, r *http.Request) {
 		component := components.Index()
 		component.Render(r.Context(), w)
@@ -69,24 +81,6 @@ func main() {
 	http.HandleFunc("GET /", mainHandler)
 
 	sourceNames := []string{SourceElixir, SourceMaany, SourcePerplexity}
-
-	for _, name := range sourceNames {
-		http.HandleFunc("POST /search/"+name, func(w http.ResponseWriter, r *http.Request) {
-			search := r.FormValue(Search)
-			apiKey := r.FormValue(ApiKey)
-			fn, err := getQueryFunc(name, apiKey)
-			if res, failed := handleErr(nil, err, w, "Failed to create client for: %s: %w", name, err); failed {
-				component := components.Result(name, res.Link, res.Elapsed, res.List)
-				component.Render(r.Context(), w)
-				return
-			}
-
-			res, err := fn(search)
-			res, _ = handleErr(res, err, w, "Failed to create client for: %s: %w", name, err)
-			component := components.Result(name, res.Link, res.Elapsed, res.List)
-			component.Render(r.Context(), w)
-		})
-	}
 
 	http.HandleFunc("POST /search", func(w http.ResponseWriter, r *http.Request) {
 		search := r.FormValue(Search)
@@ -112,8 +106,10 @@ func main() {
 		all := make([]model.TranslationsAndSource, len(sourceNames))
 
 		var wg sync.WaitGroup
+        var err error
 		for i, name := range sourceNames {
-			fn, err := getQueryFunc(name, apiKey)
+            var fn queryFunc
+			fn, err = getQueryFunc(name, apiKey)
 
 			if res, failed := handleErr(nil, err, w, "Failed to create client for: %s: %w", name, err); failed {
 				all[i] = model.TranslationsAndSource{Translations: res, Source: name}
@@ -129,8 +125,22 @@ func main() {
 			}(i)
 		}
 
+        var defs *model.Definitions
+        wg.Add(1)
+        go func() {
+            defer wg.Done()
+            resp, err := hansWehr.Query(search)
+            if err != nil {
+                log.Printf("Failed to fetch hans wehr data for %s: %s", search, err)
+            }
+            log.Printf("resp: %+v", resp)
+            defs = resp
+        }()
+
+        // TODO: fix error path
+
 		wg.Wait()
-		component := components.Results(all)
+		component := components.Results(all, defs)
 		component.Render(r.Context(), w)
 	})
 

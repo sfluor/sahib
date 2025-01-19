@@ -2,7 +2,7 @@ root = "."
 
 [build]
 pre_cmd = ["templ generate"]
-bin = "./bin/sahib"
+bin = "./bin/sahib assets/hanswehr.sqlite"
 cmd = "go build -o ./bin/sahib ."
 include_ext = ["go", "templ"]
 # Exclude specific regular expressions.

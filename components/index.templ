@@ -1,5 +1,6 @@
 package components
 
+import "strconv"
 import "sahib/model"
 
 templ Index() {
@@ -106,8 +107,23 @@ templ Result(source string, url string, elapsed string, rows []model.Translation
     }
 }
 
-templ Results(all []model.TranslationsAndSource) {
+templ Definition(def model.Definition) {
+    <article>
+        <header>
+            <em data-tooltip={def.TruncatedRootDef()}
+            data-placement="right">{def.Word}</em>
+            ({def.Root.String}, quran: {strconv.Itoa(int(def.QuranCount.Int64))})</header>
+        @templ.Raw(def.Definition)
+    </article>
+}
+
+templ Results(all []model.TranslationsAndSource, defs *model.Definitions) {
     <div>
+        if defs != nil && len(defs.Definitions) > 0 {
+            for _, def := range defs.Definitions {
+                @Definition(def)
+            }
+        }
         for _, ts := range all {
             @Result(ts.Source, ts.Translations.Link, ts.Translations.Elapsed, ts.Translations.List)
             <br />
