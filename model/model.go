@@ -45,10 +45,8 @@ func (d *Definition) TruncatedRootDef() string {
 
     maxC := 128
     if len(def) > maxC {
-        def = def[:maxC]
+        def = def[:maxC] + "....."
     }
-
-    fmt.Printf("def: %s\n", def)
 
     return def
 }
