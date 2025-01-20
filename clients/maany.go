@@ -11,7 +11,7 @@ import (
 )
 
 func QueryMaany(word string) (*model.Translations, error) {
-	url := fmt.Sprintf("https://www.almaany.com/fr/dict/ar-fr/%s/?c=Tout", word)
+	url := fmt.Sprintf("https://www.almaany.com/en/dict/ar-en/%s/?c=Tout", word)
 	results := &model.Translations{
 		Link: url,
 	}

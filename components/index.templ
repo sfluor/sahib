@@ -110,10 +110,16 @@ templ Result(source string, url string, elapsed string, rows []model.Translation
 templ Definition(def model.Definition) {
     <article>
         <header>
-            <em data-tooltip={def.TruncatedRootDef()}
-            data-placement="right">{def.Word}</em>
-            ({def.Root.String}, quran: {strconv.Itoa(int(def.QuranCount.Int64))})</header>
+            {def.Word}
+            (quran: {strconv.Itoa(int(def.QuranCount.Int64))})</header>
         @templ.Raw(def.Definition)
+        <hr />
+        if def.Root.Valid {
+            <details>
+                <summary role="button" class="secondary outline">Root: { def.Root.String }</summary>
+                <p style="white-space: pre-line;">@templ.Raw(def.RootDef.String)</p>
+            </details>
+        }
     </article>
 }
 

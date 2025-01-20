@@ -2,7 +2,6 @@ package model
 
 import (
 	"database/sql"
-	"fmt"
 )
 
 type TranslationsAndSource struct {
@@ -32,22 +31,7 @@ type Definition struct {
     Word string
     Definition string
     Root sql.NullString
+    RootID int
     RootDef sql.NullString
     QuranCount sql.NullInt64
 }
-
-func (d *Definition) TruncatedRootDef() string {
-    if !d.Root.Valid {
-        return ""
-    }
-
-    def := fmt.Sprintf("%s\n---\n%s", d.Root.String, d.RootDef.String)
-
-    maxC := 128
-    if len(def) > maxC {
-        def = def[:maxC] + "....."
-    }
-
-    return def
-}
-
