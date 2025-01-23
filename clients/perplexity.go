@@ -122,9 +122,18 @@ func queryPerplexity(token string, word string) (*model.Translations, error) {
 		return result, fmt.Errorf("Error deserializing api response: %w\n", err)
 	}
 
+	if len(apiResp.Choices) == 0 {
+		return result, fmt.Errorf("Empty response received from perplexity: %s\n", body)
+	}
+
 	content := apiResp.Choices[0].Message.Content
 	if !strings.HasPrefix(content, "{\n") {
-		content = strings.Split(strings.Split(content, "```json")[1], "``")[0]
+		parts := strings.Split(content, "```json")
+		if len(parts) < 2 {
+			return result, fmt.Errorf("Invalid JSON response received from perplexity: %s\n", body)
+		}
+
+		content = strings.Split(parts[1], "``")[0]
 	}
 
 	if err := json.Unmarshal([]byte(content), &resp); err != nil {

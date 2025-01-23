@@ -13,14 +13,14 @@ func failIf(err error) {
 }
 
 func main() {
-    client, err := clients.NewHansWehrClient(os.Args[1])
-    failIf(err)
+	client, err := clients.NewHansWehrClient(os.Args[1])
+	failIf(err)
 
-    entries, err := client.Query(os.Args[2])
-    failIf(err)
+	entries, err := client.Query(os.Args[2])
+	failIf(err)
 
-    for _, e := range entries.Entries {
-        fmt.Printf("entry: %+v\n", e)
-    }
+	for _, e := range entries.Entries {
+		fmt.Printf("entry: %+v\n", e)
+	}
 
 }

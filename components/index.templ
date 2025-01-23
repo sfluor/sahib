@@ -2,6 +2,7 @@ package components
 
 import "strconv"
 import "sahib/model"
+import "strings"
 
 templ Index() {
 <!DOCTYPE html>
@@ -20,12 +21,25 @@ templ Index() {
         hx-post="/search"
         hx-target-error="#result"
         hx-swap="innerHTML"
-        hx-include="#apiKey"
+        hx-include={
+            strings.Join([]string{
+                "#apiKey",
+                "#" + model.SourceMaany,
+                "#" + model.SourceElixir,
+                "#" + model.SourcePerplexity,
+            }, ",")}
         hx-indicator="#indicator"
       >
           <input type="search" name="search" id="search" aria-label="Search" placeholder="Search for a word: فعل"/>
           <button type="submit">Search</button>
       </form>
+      <fieldset>
+        <legend>Search sources:</legend>
+        for _, source := range []string{model.SourceElixir, model.SourceMaany, model.SourcePerplexity} {
+            <input type="checkbox" id={source} name={source} checked />
+            <label htmlFor={source}>{source}</label>
+        }
+      </fieldset>
 
         <button
             style="position: fixed; bottom: 5%; right: 5%; width: 75px; z-index: 999;"
@@ -86,7 +100,6 @@ templ Result(source string, url string, elapsed string, rows []model.Translation
             <table>
                 <thead>
                     <tr>
-                        <th scope="col">Type</th>
                         <th scope="col">Arabic</th>
                         <th scope="col">Translation</th>
                         <th scope="col">Copy</th>
@@ -95,7 +108,6 @@ templ Result(source string, url string, elapsed string, rows []model.Translation
                 <tbody>
                     for _, row := range rows {
                         <tr>
-                            <th class="sahib-meta">{ row.Meta }</th>
                             <th class="sahib-arabic">{ row.Arabic }</th>
                             <th class="sahib-translated">{ row.Translation }</th>
                             <th><input onchange="mark(event)" type="checkbox" class="sahib-checkbox" /></th>

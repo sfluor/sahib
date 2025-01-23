@@ -4,6 +4,15 @@ import (
 	"database/sql"
 )
 
+const (
+	SourceElixir     = "Elixir"
+	SourceMaany      = "Maany"
+	SourcePerplexity = "Perplexity"
+
+	ApiKey = "apiKey"
+	Search = "search"
+)
+
 type TranslationsAndSource struct {
 	Translations *Translations
 	Source       string
@@ -23,15 +32,14 @@ type Translation struct {
 }
 
 type Definitions struct {
-    Definitions []Definition
+	Definitions []Definition
 }
 
 type Definition struct {
-    ID int
-    Word string
-    Definition string
-    Root sql.NullString
-    RootID int
-    RootDef sql.NullString
-    QuranCount sql.NullInt64
+	ID         int
+	Word       string
+	Definition string
+	Root       sql.NullString
+	RootDef    sql.NullString
+	QuranCount sql.NullInt64
 }
