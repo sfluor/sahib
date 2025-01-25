@@ -111,7 +111,7 @@ func removeDiacritics(input string) string {
 			result = append(result, r)
 		}
 	}
-	return string(result)
+	return strings.TrimSpace(string(result))
 }
 
 func (h *HansWehr) Query(word string) (*model.Definitions, error) {
