@@ -37,9 +37,15 @@ templ Index() {
             <legend>Search sources:</legend>
             for _, source := range model.AllSources {
                 <input type="checkbox" id={source} name={source} checked />
-                <label htmlFor={source}>{source}</label>
+                <label 
+                    htmlFor={source}
+                    if source == model.SourcePerplexity {
+                        data-tooltip="You must provide a valid API key to use perplexity"
+                    }
+                >{source}</label>
             }
           </fieldset>
+          <hr />
           <fieldset>
             <legend>Language:</legend>
             for i, lang := range model.Languages() {
@@ -54,6 +60,11 @@ templ Index() {
                 />
                 <label htmlFor={lang.Short}>{lang.Name} {lang.Logo}</label>
             }
+          </fieldset>
+          <hr />
+          <fieldset role="group">
+              <input type="text" id="registerKey" placeholder="Perplexity API Key (For more results)"/>
+              <input type="submit" id="registerKeyButton" value="Register" />
           </fieldset>
       </details>
 
@@ -71,17 +82,12 @@ templ Index() {
             <div id="result"> Start searching ! </div>
         </div>
     </main>
-    <footer class="container" style="max-width: 600px">
-        <fieldset role="group">
-            <input type="text" id="registerKey" placeholder="Perplexity API Key (For more results)"/>
-            <input type="submit" id="registerKeyButton" value="Register" />
-        </fieldset>
-    </footer>
     <input id="apiKey" name="apiKey" style="display: none" />
 </body>
 <script>
     // Scoping function to avoid redeclaration of const problems with htmx executing the script multiple times.
     (() => {
+        const PERPLEXITY_CHECKBOX = "Perplexity";
         const PERPLEXITY_API_KEY = "perplexityApiKey";
         function loadAPIKey() {
             return localStorage.getItem(PERPLEXITY_API_KEY);
@@ -95,6 +101,13 @@ templ Index() {
         const apiKeyInp = document.getElementById("apiKey");
         apiKeyInp.value = loadAPIKey();
 
+        function reloadPerplexityValidity() {
+            const check = document.getElementById(PERPLEXITY_CHECKBOX);
+            const ariaInvalid = "aria-invalid";
+            const valid = apiKeyInp.value.startsWith("pplx-");
+            check.setAttribute(ariaInvalid, !valid);
+        }
+
         document.getElementById("registerKeyButton")
             .addEventListener("click", () => {
                 const input = document.getElementById("registerKey");
@@ -102,7 +115,10 @@ templ Index() {
                 apiKeyInp.value = input.value;
                 input.value = "";
                 showNotif("API Key registered !");
+                reloadPerplexityValidity()
             });
+
+        reloadPerplexityValidity();
     })();
 </script>
 </html>
