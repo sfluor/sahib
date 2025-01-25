@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sahib/model"
 	"strings"
+	"unicode"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -103,6 +104,16 @@ func NewHansWehrClient(path string) (*HansWehr, error) {
 	return &HansWehr{db: db, forms: formsMap}, nil
 }
 
+func removeDiacritics(input string) string {
+	result := make([]rune, 0, len(input))
+	for _, r := range input {
+		if !unicode.Is(unicode.Mn, r) {
+			result = append(result, r)
+		}
+	}
+	return string(result)
+}
+
 func (h *HansWehr) Query(word string) (*model.Definitions, error) {
 
 	q := `
@@ -116,7 +127,8 @@ FROM
     WHERE d1.word = ?
     LIMIT 10
     `
-	rows, err := h.db.Query(q, word)
+    // Remove the diacritics since everything is stored without diacritics in the DB
+	rows, err := h.db.Query(q, removeDiacritics(word))
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to query word in sqlite db: %w", err)
@@ -135,6 +147,14 @@ FROM
 		// Make the definition easier to read.
 		e.Definition = patchForms(e.Definition, h.forms)
 		e.RootDef.String = patchForms(e.RootDef.String, h.forms)
+
+        // Hide the root if it's the same as the current word.
+        if e.Definition == e.RootDef.String {
+            e.RootDef.Valid = false
+            e.RootDef.String = ""
+            e.Root.Valid = false
+            e.Root.String = ""
+        }
 
 		entries = append(entries, e)
 	}

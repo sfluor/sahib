@@ -24,6 +24,7 @@ templ Index() {
         hx-include={
             strings.Join([]string{
                 "#apiKey",
+                "#" + model.SourceWehr,
                 "#" + model.SourceMaany,
                 "#" + model.SourceElixir,
                 "#" + model.SourcePerplexity,
@@ -35,7 +36,7 @@ templ Index() {
       </form>
       <fieldset>
         <legend>Search sources:</legend>
-        for _, source := range []string{model.SourceElixir, model.SourceMaany, model.SourcePerplexity} {
+        for _, source := range []string{model.SourceWehr, model.SourceElixir, model.SourceMaany, model.SourcePerplexity} {
             <input type="checkbox" id={source} name={source} checked />
             <label htmlFor={source}>{source}</label>
         }

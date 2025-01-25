@@ -52,6 +52,10 @@ func handleErr(res *model.Translations, err error, w http.ResponseWriter, msg st
 	return res, false
 }
 
+func isSourceEnabled(r *http.Request, source string) bool {
+			return r.FormValue(source) == "on" 
+}
+
 func main() {
 	if len(os.Args) < 2 {
 		panic("Please provide the path to the hans wehr sqlite database")
@@ -95,7 +99,7 @@ func main() {
 
 		// Remove disabled sources
 		for _, source := range defaultSources {
-			if r.FormValue(source.name) == "on" {
+			if isSourceEnabled(r, source.name){
 				sources = append(sources, source)
 			}
 		}
@@ -115,15 +119,18 @@ func main() {
 			}(i)
 		}
 
-		var defs *model.Definitions
+        defs := &model.Definitions{}
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
+            if !isSourceEnabled(r, model.SourceWehr) {
+                return
+            }
+
 			resp, err := hansWehr.Query(search)
 			if err != nil {
 				log.Printf("Failed to fetch hans wehr data for %s: %s", search, err)
 			}
-			log.Printf("resp: %+v", resp)
 			defs = resp
 		}()
 

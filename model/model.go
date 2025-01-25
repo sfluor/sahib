@@ -5,6 +5,7 @@ import (
 )
 
 const (
+	SourceWehr     = "HansWehr"
 	SourceElixir     = "Elixir"
 	SourceMaany      = "Maany"
 	SourcePerplexity = "Perplexity"

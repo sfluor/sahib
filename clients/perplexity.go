@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"sahib/model"
 	"strings"
 	"time"
@@ -126,16 +127,8 @@ func queryPerplexity(token string, word string) (*model.Translations, error) {
 		return result, fmt.Errorf("Empty response received from perplexity: %s\n", body)
 	}
 
-	content := apiResp.Choices[0].Message.Content
-	if !strings.HasPrefix(content, "{\n") {
-		parts := strings.Split(content, "```json")
-		if len(parts) < 2 {
-			return result, fmt.Errorf("Invalid JSON response received from perplexity: %s\n", body)
-		}
-
-		content = strings.Split(parts[1], "``")[0]
-	}
-
+    log.Printf("Perplexity response: %s",apiResp.Choices[0].Message.Content )
+	content := extractJSON(apiResp.Choices[0].Message.Content)
 	if err := json.Unmarshal([]byte(content), &resp); err != nil {
 		return result, fmt.Errorf("Error deserializing api response content: %w\n", err)
 	}
@@ -153,4 +146,25 @@ func queryPerplexity(token string, word string) (*model.Translations, error) {
 	}
 
 	return result, nil
+}
+
+func extractJSON(input string) string {
+    start := strings.Index(input, "{")
+    if start == -1 {
+        return ""
+    }
+
+    depth := 0
+    for i := start; i < len(input); i++ {
+        switch input[i] {
+        case '{':
+            depth++
+        case '}':
+            depth--
+            if depth == 0 {
+                return input[start : i+1]
+            }
+        }
+    }
+    return ""
 }
