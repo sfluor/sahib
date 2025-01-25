@@ -10,8 +10,8 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-func QueryMaany(word string) (*model.Translations, error) {
-	url := fmt.Sprintf("https://www.almaany.com/en/dict/ar-en/%s/?c=Tout", word)
+func QueryMaany(word string, lang model.Language) (*model.Translations, error) {
+	url := fmt.Sprintf("https://www.almaany.com/%s/dict/ar-%s/%s/?c=Tout", lang.Code, lang.Code, word)
 	results := &model.Translations{
 		Link: url,
 	}
@@ -22,7 +22,7 @@ func QueryMaany(word string) (*model.Translations, error) {
 
 	res, err := queryURL("GET", url, nil, nil, true)
 	if err != nil {
-		return results, fmt.Errorf("failed to query maany: %w", err)
+		return results, fmt.Errorf("failed to query maany at %s: %w",url, err)
 	}
 	defer res.Body.Close()
 

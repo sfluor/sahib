@@ -22,25 +22,40 @@ templ Index() {
         hx-target-error="#result"
         hx-swap="innerHTML"
         hx-include={
-            strings.Join([]string{
-                "#apiKey",
-                "#" + model.SourceWehr,
-                "#" + model.SourceMaany,
-                "#" + model.SourceElixir,
-                "#" + model.SourcePerplexity,
-            }, ",")}
+            strings.Join(
+            append(
+            []string{"#apiKey"},
+            model.SourceAndLangIds()...), ",")}
         hx-indicator="#indicator"
       >
           <input type="search" name="search" id="search" aria-label="Search" placeholder="Search for a word: فعل"/>
           <button type="submit">Search</button>
       </form>
-      <fieldset>
-        <legend>Search sources:</legend>
-        for _, source := range []string{model.SourceWehr, model.SourceElixir, model.SourceMaany, model.SourcePerplexity} {
-            <input type="checkbox" id={source} name={source} checked />
-            <label htmlFor={source}>{source}</label>
-        }
-      </fieldset>
+      <details>
+          <summary role="button" class="secondary"> Options </summary>
+          <fieldset>
+            <legend>Search sources:</legend>
+            for _, source := range model.AllSources {
+                <input type="checkbox" id={source} name={source} checked />
+                <label htmlFor={source}>{source}</label>
+            }
+          </fieldset>
+          <fieldset>
+            <legend>Language:</legend>
+            for i, lang := range model.Languages() {
+                <input
+                    type="radio"
+                    id={lang.Short}
+                    name={model.Lang}
+                    value={lang.Short}
+                    if i == 0 {
+                        checked
+                    }
+                />
+                <label htmlFor={lang.Short}>{lang.Name} {lang.Logo}</label>
+            }
+          </fieldset>
+      </details>
 
         <button
             style="position: fixed; bottom: 5%; right: 5%; width: 75px; z-index: 999;"

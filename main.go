@@ -11,7 +11,7 @@ import (
 	"sync"
 )
 
-type queryFunc func(word string) (*model.Translations, error)
+type queryFunc func(word string, lang model.Language) (*model.Translations, error)
 
 type source struct {
 	name string
@@ -30,7 +30,7 @@ func getQueryFunc(name string, apiKey string) (queryFunc, error) {
 			client := clients.PerplexityClient{ApiKey: apiKey}
 			fn = client.Query
 		} else {
-			return func(word string) (*model.Translations, error) {
+			return func(word string, lang model.Language) (*model.Translations, error) {
 				return &model.Translations{}, nil
 			}, nil
 		}
@@ -71,13 +71,31 @@ func main() {
 		component := components.Index()
 		component.Render(r.Context(), w)
 	}
+    
+    languages := model.Languages()
 
 	http.HandleFunc("GET /", mainHandler)
 
 	http.HandleFunc("POST /search", func(w http.ResponseWriter, r *http.Request) {
 		search := r.FormValue(model.Search)
 		apiKey := r.FormValue(model.ApiKey)
-		log.Printf("Searching for: %s", search)
+        langStr := r.FormValue(model.Lang)
+
+        var lang model.Language
+        for _, l := range languages {
+            if l.Short == langStr {
+                lang = l
+                break
+            }
+        }
+
+        if lang.Short == "" {
+            lang = languages[0]
+            log.Printf("Couldn't find language: %s among %+v (will default to %+v)", langStr, languages, lang)
+        }
+
+
+		log.Printf("Searching for: %s (%+v)", search, lang)
 
 		defaultSources := []source{
 			{
@@ -113,7 +131,7 @@ func main() {
 			wg.Add(1)
 			go func(idx int) {
 				defer wg.Done()
-				res, err := src.fn(search)
+				res, err := src.fn(search, lang)
 				res, _ = handleErr(res, err, w, "Failed to create client for: %s: %w", name, err)
 				all[idx] = model.TranslationsAndSource{Translations: res, Source: name}
 			}(i)

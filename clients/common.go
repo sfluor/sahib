@@ -45,8 +45,16 @@ func queryURL(
 
 	if res.StatusCode != 200 {
 		text, _ := io.ReadAll(res.Body)
-		return nil, fmt.Errorf("status code error: %d %s\n%s", res.StatusCode, res.Status, string(text))
+		return nil, fmt.Errorf("status code error: %d %s\n%s", res.StatusCode, res.Status, truncate(string(text), 256))
 	}
 
 	return res, nil
+}
+
+func truncate(text string, max int) string {
+    if len(text) > max {
+        return text[:max]
+    }
+
+    return text
 }

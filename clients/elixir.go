@@ -14,7 +14,7 @@ import (
 
 const ElixirURL = "https://quest.ms.mff.cuni.cz/cgi-bin/elixir/index.fcgi?mode=home"
 
-func QueryElixir(word string) (*model.Translations, error) {
+func QueryElixir(word string, ignored model.Language) (*model.Translations, error) {
 	result := &model.Translations{
 		Link: ElixirURL,
 	}

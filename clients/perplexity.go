@@ -25,13 +25,13 @@ type PerplexityClient struct {
 	ApiKey string
 }
 
-func (c *PerplexityClient) Query(word string) (*model.Translations, error) {
-	return queryPerplexity(c.ApiKey, word)
+func (c *PerplexityClient) Query(word string, lang model.Language) (*model.Translations, error) {
+	return queryPerplexity(c.ApiKey, word, lang)
 }
 
-func prompt(word string) string {
+func prompt(word string, lang model.Language) string {
 	count := 5
-	target := "french"
+	target := lang.Name
 	return fmt.Sprintf(`Give me %d examples of useful and relevant sentences from medias or stories with the proper arabic diacritics (harakats) on all words.
 
 The word is: %s
@@ -61,7 +61,7 @@ type PerplexityAPIMessage struct {
 	Content string `json:"content"`
 }
 
-func queryPerplexity(token string, word string) (*model.Translations, error) {
+func queryPerplexity(token string, word string, lang model.Language) (*model.Translations, error) {
 	result := &model.Translations{}
 	resp := PerplexityResp{}
 	url := "https://api.perplexity.ai/chat/completions"
@@ -81,7 +81,7 @@ func queryPerplexity(token string, word string) (*model.Translations, error) {
 			},
 			{
 				"role":    "user",
-				"content": prompt(word),
+				"content": prompt(word, lang),
 			},
 		},
 		"max_tokens":               "1000",
