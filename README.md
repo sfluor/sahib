@@ -4,6 +4,8 @@
 
 A companion to learn new arabic words and understand their usages by aggregating multiple dictionaries / sources.
 
+![Sahib screenshot](./assets/sahib.jpg)
+
 Supported ones so far are:
 - Hans Wehr dictionary credits to [this repository](https://github.com/GibreelAbdullah/HansWehrDictionary)
 - [Elixir FM](http://quest.ms.mff.cuni.cz/cgi-bin/elixir/index.fcgi)
